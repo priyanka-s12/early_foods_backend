@@ -176,6 +176,28 @@ app.get('/api/products/:productId', async (req, res) => {
   }
 });
 
+async function readProductByTitle(title) {
+  try {
+    const product = await Product.find({ productTitle: title });
+    return product;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.get('/api/products/search/:title', async (req, res) => {
+  try {
+    const product = await readProductByTitle(req.params.title);
+    if (product) {
+      res.status(200).json(product);
+    } else {
+      res.status(404).json({ error: 'Product title not found.' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get a product' });
+  }
+});
+
 async function deleteProduct(productId) {
   try {
     const product = await Product.findByIdAndDelete(productId);
