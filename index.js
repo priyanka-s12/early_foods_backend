@@ -132,7 +132,7 @@ app.post('/api/products', async (req, res) => {
 
 async function readAllProducts() {
   try {
-    const allProducts = await Product.find();
+    const allProducts = await Product.find().populate('category');
     return allProducts;
   } catch (error) {
     console.log(error);
