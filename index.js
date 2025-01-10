@@ -110,6 +110,38 @@ app.delete('/api/categories/:categoryId', async (req, res) => {
   }
 });
 
+async function updateCategory(categoryId, dataToUpdate) {
+  try {
+    const updatedCategory = await Category.findByIdAndUpdate(
+      categoryId,
+      dataToUpdate,
+      { new: true }
+    );
+    return updatedCategory;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.put('/api/categories/:categoryId', async (req, res) => {
+  try {
+    const updatedCategory = await updateCategory(
+      req.params.categoryId,
+      req.body
+    );
+    if (updatedCategory) {
+      res.status(200).json({
+        message: 'Category updated successfully',
+        category: updatedCategory,
+      });
+    } else {
+      res.status(404).json({ error: 'Category not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update category' });
+  }
+});
+
 //products
 async function addProduct(newProduct) {
   try {
@@ -219,5 +251,35 @@ app.delete('/api/products/:productId', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete product' });
+  }
+});
+
+async function updateProduct(productId, dataToUpdate) {
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      dataToUpdate,
+      { new: true }
+    );
+    return updatedProduct;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.put('/api/products/:productId', async (req, res) => {
+  try {
+    const updatedProduct = await updateProduct(req.params.productId, req.body);
+    if (updatedProduct) {
+      res.status(200).json({
+        message: 'Product updated successfully',
+        product: updatedProduct,
+      });
+    } else {
+      res.status(404).json({ error: 'Product not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'server error' });
   }
 });
