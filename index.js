@@ -426,7 +426,7 @@ app.post('/api/users', async (req, res) => {
 
 async function readAllUsers() {
   try {
-    const allUsers = await User.find().populate('address');
+    const allUsers = await User.find();
     return allUsers;
   } catch (error) {
     console.log(error);
@@ -448,7 +448,7 @@ app.get('/api/users', async (req, res) => {
 
 async function readUserById(userId) {
   try {
-    const user = await User.findOne({ _id: userId });
+    const user = await User.findOne({ _id: userId }).populate('address');
     return user;
   } catch (error) {
     console.log(error);
