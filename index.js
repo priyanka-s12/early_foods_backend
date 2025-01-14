@@ -426,7 +426,7 @@ app.post('/api/users', async (req, res) => {
 
 async function readAllUsers() {
   try {
-    const allUsers = await User.find();
+    const allUsers = await User.find().populate('address');
     return allUsers;
   } catch (error) {
     console.log(error);
