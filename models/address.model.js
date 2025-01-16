@@ -13,7 +13,6 @@ const addressSchema = new mongoose.Schema(
     state: String,
     country: String,
     isDefaultAddress: Boolean,
-    userId: { type: mongoose.Schema.Types.ObjectId, red: 'User' },
   },
   { timestamps: true }
 );
