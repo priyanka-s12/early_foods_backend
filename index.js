@@ -430,6 +430,7 @@ async function addAddress(newAddress) {
     const address = new Address(newAddress);
     await address.save();
 
+    //add address to User's addresses array
     const user = await User.findOne({ _id: address.user });
     user.addresses.push(address);
 
@@ -452,7 +453,15 @@ app.post('/api/addresses', async (req, res) => {
 async function deleteAddress(addressId) {
   try {
     const address = await Address.findByIdAndDelete(addressId);
-    return address;
+    console.log(address);
+    //delete address from user's addresses array
+    const userAddress = await User.findByIdAndUpdate(
+      address.user,
+      { $pull: { addresses: address._id } },
+      { new: true }
+    );
+    // console.log(userAddress);
+    return userAddress;
   } catch (error) {
     console.log(error);
   }
@@ -461,12 +470,11 @@ async function deleteAddress(addressId) {
 app.delete('/api/addresses/:addressId', async (req, res) => {
   try {
     const deletedAddress = await deleteAddress(req.params.addressId);
-    if (!deleteAddress) {
+    if (!deletedAddress) {
       res.status(404).json({ error: 'Address not found' });
     } else {
       res.status(200).json({
         message: 'Address deleted successfully',
-        address: deletedAddress,
       });
     }
   } catch (error) {
@@ -481,6 +489,8 @@ async function updateAddress(addressId, dataToUpdate) {
       dataToUpdate,
       { new: true }
     );
+    console.log(updatedAddress);
+
     return updatedAddress;
   } catch (error) {
     console.log(error);
