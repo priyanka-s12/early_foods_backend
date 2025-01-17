@@ -405,7 +405,7 @@ app.get('/api/users/:userId', async (req, res) => {
 //address
 async function readAllAddresses() {
   try {
-    const allAddresses = await Address.find().populate('user');
+    const allAddresses = await Address.find();
     return allAddresses;
   } catch (error) {
     console.log(error);
@@ -422,6 +422,28 @@ app.get('/api/addresses', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to get all addresses.' });
+  }
+});
+
+async function readAddressById(addressId) {
+  try {
+    const address = await Address.findOne({ _id: addressId }).populate('user');
+    return address;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.get('/api/addresses/:addressId', async (req, res) => {
+  try {
+    const address = await readAddressById(req.params.addressId);
+    if (address) {
+      res.status(200).json(address);
+    } else {
+      res.status(404).json({ error: 'Address not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get an address.' });
   }
 });
 
