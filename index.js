@@ -210,10 +210,36 @@ app.get('/api/products/:productId', async (req, res) => {
   }
 });
 
-async function readProductByTitle(title) {
+// async function readProductByTitle(title) {
+//   try {
+//     const product = await Product.find({ productTitle: title });
+//     return product;
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
+
+// app.get('/api/products/search/:title', async (req, res) => {
+//   try {
+//     const product = await readProductByTitle(req.params.title);
+//     if (product) {
+//       res.status(200).json(product);
+//     } else {
+//       res.status(404).json({ error: 'Product title not found.' });
+//     }
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to get a product' });
+//   }
+// });
+
+async function searchProductByTitle(title) {
   try {
-    const product = await Product.find({ productTitle: title });
-    return product;
+    const products = await Product.find();
+    const filteredProducts = products.filter((product) =>
+      product.productTitle.toLowerCase().includes(title.toLowerCase())
+    );
+
+    return filteredProducts;
   } catch (error) {
     console.log(error);
   }
@@ -221,14 +247,15 @@ async function readProductByTitle(title) {
 
 app.get('/api/products/search/:title', async (req, res) => {
   try {
-    const product = await readProductByTitle(req.params.title);
-    if (product) {
-      res.status(200).json(product);
+    const products = await searchProductByTitle(req.params.title);
+
+    if (products.length === 0) {
+      res.status(404).json({ error: `No ${req.params.title} product found` });
     } else {
-      res.status(404).json({ error: 'Product title not found.' });
+      res.status(200).json(products);
     }
   } catch (error) {
-    res.status(500).json({ error: 'Failed to get a product' });
+    res.status(500).json({ error: 'Failed to get a product by its title' });
   }
 });
 
@@ -402,6 +429,106 @@ app.get('/api/users/:userId', async (req, res) => {
 //   }
 // });
 
+//add address to user
+async function addAddressToUser(userId, newAddress) {
+  try {
+    const address = new Address(newAddress);
+    await address.save();
+
+    //add address to User's addresses array
+    const user = await User.findOne({ _id: userId });
+    user.addresses.push(address);
+
+    const saveAddress = await user.save();
+    // console.log(saveAddress);
+    return saveAddress;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.post('/api/users/:userId/addresses', async (req, res) => {
+  try {
+    const savedAddress = await addAddressToUser(req.params.userId, req.body);
+    res.status(201).json(savedAddress);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add address to user data' });
+  }
+});
+
+//update address of the user
+async function updateAddressOfUser(addressId, dataToUpdate) {
+  try {
+    const updateAddress = await Address.findByIdAndUpdate(
+      addressId,
+      dataToUpdate,
+      { new: true }
+    );
+    console.log(updateAddress);
+
+    return updateAddress;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.put('/api/users/:userId/addresses/:addressId', async (req, res) => {
+  try {
+    const updatedAddress = await updateAddressOfUser(
+      req.params.addressId,
+      req.body
+    );
+    if (updatedAddress) {
+      res.status(200).json({
+        message: 'Address updated successfully',
+        address: updatedAddress,
+      });
+    } else {
+      res.status(404).json({ error: 'Could not update an address' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update an address of user' });
+  }
+});
+
+async function deleteAddressOfUser(userId, addressId) {
+  try {
+    const user = await User.findOne({ _id: userId });
+    const index = user.addresses.findIndex(
+      (address) => address._id == addressId
+    );
+    // console.log(index);
+
+    if (index !== -1) {
+      user.addresses.splice(index, 1);
+      await user.save();
+      await Address.findByIdAndDelete(addressId);
+    }
+    // console.log(user);
+    return user;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.delete('/api/users/:userId/addresses/:addressId', async (req, res) => {
+  try {
+    const deletedAddress = await deleteAddressOfUser(
+      req.params.userId,
+      req.params.addressId
+    );
+    if (!deletedAddress) {
+      res.status(404).json({ error: 'Address not found' });
+    } else {
+      res.status(200).json({
+        message: 'Address deleted successfully',
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete an address' });
+  }
+});
+
 //address
 async function readAllAddresses() {
   try {
@@ -422,115 +549,5 @@ app.get('/api/addresses', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to get all addresses.' });
-  }
-});
-
-async function readAddressById(addressId) {
-  try {
-    const address = await Address.findOne({ _id: addressId }).populate('user');
-    return address;
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-app.get('/api/addresses/:addressId', async (req, res) => {
-  try {
-    const address = await readAddressById(req.params.addressId);
-    if (address) {
-      res.status(200).json(address);
-    } else {
-      res.status(404).json({ error: 'Address not found' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get an address.' });
-  }
-});
-
-async function addAddress(newAddress) {
-  try {
-    const address = new Address(newAddress);
-    await address.save();
-
-    //add address to User's addresses array
-    const user = await User.findOne({ _id: address.user });
-    user.addresses.push(address);
-
-    const saveAddress = await user.save();
-    return saveAddress;
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-app.post('/api/addresses', async (req, res) => {
-  try {
-    const savedAddress = await addAddress(req.body);
-    res.status(201).json(savedAddress);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to add address' });
-  }
-});
-
-async function deleteAddress(addressId) {
-  try {
-    const address = await Address.findByIdAndDelete(addressId);
-    console.log(address);
-    //delete address from user's addresses array
-    const userAddress = await User.findByIdAndUpdate(
-      address.user,
-      { $pull: { addresses: address._id } },
-      { new: true }
-    );
-    // console.log(userAddress);
-    return userAddress;
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-app.delete('/api/addresses/:addressId', async (req, res) => {
-  try {
-    const deletedAddress = await deleteAddress(req.params.addressId);
-    if (!deletedAddress) {
-      res.status(404).json({ error: 'Address not found' });
-    } else {
-      res.status(200).json({
-        message: 'Address deleted successfully',
-      });
-    }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete an address' });
-  }
-});
-
-async function updateAddress(addressId, dataToUpdate) {
-  try {
-    const updatedAddress = await Address.findByIdAndUpdate(
-      addressId,
-      dataToUpdate,
-      { new: true }
-    );
-    console.log(updatedAddress);
-
-    return updatedAddress;
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-app.put('/api/addresses/:addressId', async (req, res) => {
-  try {
-    const updatedAddress = await updateAddress(req.params.addressId, req.body);
-    if (updatedAddress) {
-      res.status(200).json({
-        message: 'Address updated successfully',
-        address: updatedAddress,
-      });
-    } else {
-      res.status(404).json({ error: 'Could not update an address' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update an address' });
   }
 });
