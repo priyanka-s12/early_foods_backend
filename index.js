@@ -210,28 +210,6 @@ app.get('/api/products/:productId', async (req, res) => {
   }
 });
 
-// async function readProductByTitle(title) {
-//   try {
-//     const product = await Product.find({ productTitle: title });
-//     return product;
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
-
-// app.get('/api/products/search/:title', async (req, res) => {
-//   try {
-//     const product = await readProductByTitle(req.params.title);
-//     if (product) {
-//       res.status(200).json(product);
-//     } else {
-//       res.status(404).json({ error: 'Product title not found.' });
-//     }
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to get a product' });
-//   }
-// });
-
 async function searchProductByTitle(title) {
   try {
     const products = await Product.find();
@@ -429,6 +407,25 @@ app.get('/api/users/:userId', async (req, res) => {
 //   }
 // });
 
+//read address of user
+async function readAddressOfUser(userId) {
+  try {
+    const user = await User.findOne({ _id: userId });
+    console.log(user.addresses);
+    return user.addresses;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.get('/api/users/:userId/addresses', async (req, res) => {
+  try {
+    const addresses = await readAddressOfUser(req.params.userId);
+    res.status(200).json(addresses);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get addresses of an user' });
+  }
+});
 //add address to user
 async function addAddressToUser(userId, newAddress) {
   try {
