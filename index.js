@@ -411,7 +411,7 @@ app.get('/api/users/:userId', async (req, res) => {
 async function readAddressOfUser(userId) {
   try {
     const user = await User.findOne({ _id: userId }).populate('addresses');
-    console.log(user.addresses);
+    // console.log(user.addresses);
     return user.addresses;
   } catch (error) {
     console.log(error);
@@ -433,14 +433,14 @@ async function addAddressToUser(userId, newAddress) {
     await address.save();
 
     //add address to User's addresses array
-    const user = await User.findOne({ _id: userId });
+    const user = await User.findOne({ _id: userId }).populate('addresses');
     user.addresses.push(address);
     console.log(user.addresses);
 
     const saveAddress = await user.save();
     console.log(saveAddress);
-    console.log(address);
-    return address;
+
+    return saveAddress;
   } catch (error) {
     console.log(error);
   }
@@ -449,6 +449,7 @@ async function addAddressToUser(userId, newAddress) {
 app.post('/api/users/:userId/addresses', async (req, res) => {
   try {
     const savedAddress = await addAddressToUser(req.params.userId, req.body);
+    console.log(savedAddress);
     res.status(201).json(savedAddress);
   } catch (error) {
     res.status(500).json({ error: 'Failed to add address to user data' });
