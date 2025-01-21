@@ -435,10 +435,12 @@ async function addAddressToUser(userId, newAddress) {
     //add address to User's addresses array
     const user = await User.findOne({ _id: userId });
     user.addresses.push(address);
+    console.log(user.addresses);
 
     const saveAddress = await user.save();
-    // console.log(saveAddress);
-    return saveAddress;
+    console.log(saveAddress);
+    console.log(address);
+    return address;
   } catch (error) {
     console.log(error);
   }
