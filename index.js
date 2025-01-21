@@ -410,7 +410,7 @@ app.get('/api/users/:userId', async (req, res) => {
 //read address of user
 async function readAddressOfUser(userId) {
   try {
-    const user = await User.findOne({ _id: userId });
+    const user = await User.findOne({ _id: userId }).populate('addresses');
     console.log(user.addresses);
     return user.addresses;
   } catch (error) {
