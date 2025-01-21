@@ -335,7 +335,7 @@ app.get('/api/users', async (req, res) => {
 
 async function readUserById(userId) {
   try {
-    const user = await User.findOne({ _id: userId }).populate('addresses');
+    const user = await User.findOne({ _id: userId });
     return user;
   } catch (error) {
     console.log(error);
