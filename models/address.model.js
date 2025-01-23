@@ -12,7 +12,6 @@ const addressSchema = new mongoose.Schema(
     pincode: Number,
     state: String,
     country: String,
-    isDefaultAddress: Boolean,
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
