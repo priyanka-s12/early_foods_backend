@@ -314,7 +314,7 @@ app.post('/api/users', async (req, res) => {
 
 async function readUser(userId) {
   try {
-    const user = await User.findOne({ _id: userId }).populate('address');
+    const user = await User.findOne({ _id: userId });
     return user;
   } catch (error) {
     console.log(error);
