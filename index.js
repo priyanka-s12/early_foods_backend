@@ -7,6 +7,7 @@ const Product = require('./models/product.model');
 const Category = require('./models/category.model');
 const Address = require('./models/address.model');
 const User = require('./models/user.model');
+const Wishlist = require('./models/wishlist.model');
 
 const app = express();
 
@@ -313,7 +314,7 @@ app.post('/api/users', async (req, res) => {
 
 async function readUser(userId) {
   try {
-    const user = await User.findOne({ _id: userId });
+    const user = await User.findOne({ _id: userId }).populate('address');
     return user;
   } catch (error) {
     console.log(error);
@@ -498,5 +499,71 @@ app.put('/api/addresses/:addressId', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to update an address' });
+  }
+});
+
+//wishlist
+async function getWishlist() {
+  try {
+    const wishlist = await Wishlist.find().populate('product');
+    return wishlist;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.get('/api/wishlists', async (req, res) => {
+  try {
+    const wishlists = await getWishlist();
+    res.status(200).json(wishlists);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get wishlist items' });
+  }
+});
+
+async function addToWishlist(newData) {
+  try {
+    const item = new Wishlist(newData);
+    const savedItem = await item.save();
+    return savedItem;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.post('/api/wishlists', async (req, res) => {
+  try {
+    const savedItem = await addToWishlist(req.body);
+    res.status(201).json({
+      meesage: 'Item added to wishlist successfully',
+      wishlist: savedItem,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add an item to wishlist' });
+  }
+});
+
+async function removeFromWishlist(wishlistId) {
+  try {
+    const item = await Wishlist.findByIdAndDelete(wishlistId);
+    return item;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.delete('/api/wishlists/:wishlistId', async (req, res) => {
+  try {
+    const deletedItem = await removeFromWishlist(req.params.wishlistId);
+    if (!deletedItem) {
+      res.status(404).json({ error: 'Item not found' });
+    } else {
+      res.status(200).json({
+        message: 'Item removed from wishlist successfully',
+        wishlist: deletedItem,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove an item from wishlist' });
   }
 });
