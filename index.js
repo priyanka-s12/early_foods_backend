@@ -523,9 +523,17 @@ app.get('/api/wishlists', async (req, res) => {
 
 async function addToWishlist(newData) {
   try {
-    const item = new Wishlist(newData);
-    const savedItem = await item.save();
-    return savedItem;
+    const wishlistItems = await Wishlist.find();
+
+    const existingItem = wishlistItems.find(
+      (wish) => wish.product.toString() === newData.product.toString()
+    );
+    console.log(existingItem);
+
+    if (!existingItem) {
+      const item = new Wishlist(newData);
+      return await item.save();
+    }
   } catch (error) {
     console.log(error);
   }
@@ -534,10 +542,14 @@ async function addToWishlist(newData) {
 app.post('/api/wishlists', async (req, res) => {
   try {
     const savedItem = await addToWishlist(req.body);
-    res.status(201).json({
-      meesage: 'Item added to wishlist successfully',
-      wishlist: savedItem,
-    });
+    if (savedItem) {
+      res.status(201).json({
+        meesage: 'Item added to wishlist successfully',
+        wishlist: savedItem,
+      });
+    } else {
+      res.json({ message: 'Item is alredy present in the wishlist' });
+    }
   } catch (error) {
     res.status(500).json({ error: 'Failed to add an item to wishlist' });
   }
