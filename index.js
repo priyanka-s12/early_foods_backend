@@ -548,7 +548,7 @@ app.post('/api/wishlists', async (req, res) => {
         wishlist: savedItem,
       });
     } else {
-      res.json({ message: 'Item is alredy present in the wishlist' });
+      res.json({ message: 'Item is already present in the wishlist' });
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to add an item to wishlist' });
