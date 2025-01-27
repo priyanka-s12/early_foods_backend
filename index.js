@@ -402,7 +402,7 @@ app.post('/api/addresses', async (req, res) => {
     const savedAddress = await addAddress(req.body);
     res
       .status(201)
-      .json({ meesage: 'Address added successfully', address: savedAddress });
+      .json({ message: 'Address added successfully', address: savedAddress });
   } catch (error) {
     res.status(500).json({ error: 'Failed to add address' });
   }
@@ -544,7 +544,7 @@ app.post('/api/wishlists', async (req, res) => {
     const savedItem = await addToWishlist(req.body);
     if (savedItem) {
       res.status(201).json({
-        meesage: 'Item added to wishlist successfully',
+        message: 'Item added to wishlist successfully',
         wishlist: savedItem,
       });
     } else {
