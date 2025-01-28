@@ -8,6 +8,7 @@ const Category = require('./models/category.model');
 const Address = require('./models/address.model');
 const User = require('./models/user.model');
 const Wishlist = require('./models/wishlist.model');
+const Cart = require('./models/cart.model');
 
 const app = express();
 
@@ -577,5 +578,80 @@ app.delete('/api/wishlists/:wishlistId', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to remove an item from wishlist' });
+  }
+});
+
+//cart
+async function getCartItems() {
+  try {
+    const cart = await Cart.find().populate('product');
+    return cart;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.get('/api/carts', async (req, res) => {
+  try {
+    const cart = await getCartItems();
+    res.status(200).json(cart);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get cart items' });
+  }
+});
+
+async function addToCart(newData) {
+  try {
+    // const cartItems = await Cart.find();
+    // const existingItem = cartItems.find(
+    //   (cart) => cart.product.toString() === newData.product.toString()
+    // );
+    // console.log(existingItem);
+    // if (!existingItem) {
+    //   const cart = new Cart(newData);
+    //   return await cart.save();
+    const cartItems = new Cart(newData);
+    const saveCart = await cartItems.save();
+    return saveCart;
+    // }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.post('/api/carts', async (req, res) => {
+  try {
+    const savedItem = await addToCart(req.body);
+    console.log(savedItem);
+    res.status(201).json({
+      cart: savedItem,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add an item to cart' });
+  }
+});
+
+async function removeFromCart(cartId) {
+  try {
+    const item = await Cart.findByIdAndDelete(cartId);
+    return item;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.delete('/api/carts/:cartId', async (req, res) => {
+  try {
+    const deletedItem = await removeFromCart(req.params.cartId);
+    if (!deletedItem) {
+      res.status(404).json({ error: 'Item not found' });
+    } else {
+      res.status(200).json({
+        message: 'Item removed from cart successfully',
+        cart: deletedItem,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove an item from cart' });
   }
 });
