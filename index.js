@@ -602,18 +602,9 @@ app.get('/api/carts', async (req, res) => {
 
 async function addToCart(newData) {
   try {
-    // const cartItems = await Cart.find();
-    // const existingItem = cartItems.find(
-    //   (cart) => cart.product.toString() === newData.product.toString()
-    // );
-    // console.log(existingItem);
-    // if (!existingItem) {
-    //   const cart = new Cart(newData);
-    //   return await cart.save();
     const cartItems = new Cart(newData);
     const saveCart = await cartItems.save();
     return saveCart;
-    // }
   } catch (error) {
     console.log(error);
   }
