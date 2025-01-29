@@ -12,6 +12,10 @@ const productSchema = new mongoose.Schema(
     ingredients: String,
     netWeight: Number,
     imageUrl: String,
+    quantity: {
+      type: Number,
+      default: 1,
+    },
   },
   { timestamps: true }
 );

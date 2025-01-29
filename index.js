@@ -522,19 +522,45 @@ app.get('/api/wishlists', async (req, res) => {
   }
 });
 
-async function addToWishlist(newData) {
+// async function addToWishlist(newData) {
+//   try {
+//     const wishlistItems = await Wishlist.find();
+
+//     const existingItem = wishlistItems.find(
+//       (wish) => wish.product.toString() === newData.product.toString()
+//     );
+//     console.log(existingItem);
+
+//     if (!existingItem) {
+//       const item = new Wishlist(newData);
+//       return await item.save();
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
+
+// app.post('/api/wishlists', async (req, res) => {
+//   try {
+//     const savedItem = await addToWishlist(req.body);
+//     if (savedItem) {
+//       res.status(201).json({
+//         message: 'Item added to wishlist successfully',
+//         wishlist: savedItem,
+//       });
+//     } else {
+//       res.json({ message: 'Item is already present in the wishlist' });
+//     }
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to add an item to wishlist' });
+//   }
+// });
+
+async function addToWishlist(item) {
   try {
-    const wishlistItems = await Wishlist.find();
-
-    const existingItem = wishlistItems.find(
-      (wish) => wish.product.toString() === newData.product.toString()
-    );
-    console.log(existingItem);
-
-    if (!existingItem) {
-      const item = new Wishlist(newData);
-      return await item.save();
-    }
+    const newItem = new Wishlist(item);
+    const saveItem = await newItem.save();
+    return saveItem;
   } catch (error) {
     console.log(error);
   }
@@ -544,12 +570,7 @@ app.post('/api/wishlists', async (req, res) => {
   try {
     const savedItem = await addToWishlist(req.body);
     if (savedItem) {
-      res.status(201).json({
-        message: 'Item added to wishlist successfully',
-        wishlist: savedItem,
-      });
-    } else {
-      res.json({ message: 'Item is already present in the wishlist' });
+      res.status(201).json(savedItem);
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to add an item to wishlist' });
@@ -614,9 +635,7 @@ app.post('/api/carts', async (req, res) => {
   try {
     const savedItem = await addToCart(req.body);
     console.log(savedItem);
-    res.status(201).json({
-      cart: savedItem,
-    });
+    res.status(201).json(savedItem);
   } catch (error) {
     res.status(500).json({ error: 'Failed to add an item to cart' });
   }
