@@ -551,6 +551,7 @@ app.post('/api/wishlists', async (req, res) => {
     } else {
       res.json({
         message: 'Item is already present in the wishlist',
+        wishlist: savedItem,
       });
     }
   } catch (error) {
