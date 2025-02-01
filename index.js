@@ -685,7 +685,7 @@ app.post('/api/wishlists/move', async (req, res) => {
     if (itemToMove) {
       res.status(201).json({
         message: 'Item moved from wishlist to cart successfully',
-        item: itemToMove,
+        wishlist: itemToMove,
       });
     } else {
       res.json({
@@ -726,7 +726,7 @@ app.post('/api/carts/move', async (req, res) => {
     if (itemToMove) {
       res.status(201).json({
         message: 'Item moved from cart to wishlist successfully',
-        item: itemToMove,
+        cart: itemToMove,
       });
     } else {
       res.json({
