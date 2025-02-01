@@ -658,14 +658,65 @@ app.delete('/api/carts/:cartId', async (req, res) => {
   }
 });
 
+//moving items
+async function moveFromWishlistToCart(newData, wishlistId) {
+  try {
+    const existingItem = await Cart.findOne({ product: newData.product });
+    console.log(existingItem);
+    if (existingItem) {
+      return;
+    } else {
+      const wishlistItem = await Wishlist.findByIdAndDelete(wishlistId);
+      console.log(wishlistItem);
+      const item = new Cart(newData);
+      console.log(item);
+      await item.save();
+      return wishlistItem;
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.post('/api/wishlists/:wishlistId', async (req, res) => {
+  try {
+    const itemToMove = await moveFromWishlistToCart(
+      req.body,
+      req.params.wishlistId
+    );
+    console.log(itemToMove);
+    if (itemToMove) {
+      res.status(201).json({
+        message: 'Item moved from wishlist to cart successfully',
+        item: itemToMove,
+      });
+    } else {
+      res.json({
+        message: 'Item is already present in the cart',
+      });
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: 'Failed to move an item from wishlist to cart' });
+  }
+});
+
 async function moveFromCartToWishlist(newData, cartId) {
   try {
-    const cartItem = await Cart.findByIdAndDelete(cartId);
-    console.log(cartItem);
-    const item = new Wishlist(newData);
-    console.log(item);
-    await item.save();
-    return cartItem;
+    const existingItem = await Wishlist.findOne({ product: newData.product });
+    console.log(existingItem);
+
+    if (existingItem) {
+      return;
+    } else {
+      const cartItem = await Cart.findByIdAndDelete(cartId);
+      console.log(cartItem);
+      const item = new Wishlist(newData);
+      console.log(item);
+      await item.save();
+      return cartItem;
+    }
   } catch (error) {
     console.log(error);
   }
@@ -677,13 +728,20 @@ app.post('/api/carts/:cartId', async (req, res) => {
       req.body,
       req.params.cartId
     );
+    console.log(itemToMove);
     if (itemToMove) {
       res.status(201).json({
         message: 'Item moved from cart to wishlist successfully',
         item: itemToMove,
       });
+    } else {
+      res.json({
+        message: 'Item is already present in the wishlist',
+      });
     }
   } catch (error) {
-    res.status(500).json({ error: 'Failed to move an item from cart' });
+    res
+      .status(500)
+      .json({ error: 'Failed to move an item from cart to wishlist' });
   }
 });
