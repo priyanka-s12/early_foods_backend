@@ -524,11 +524,7 @@ app.get('/api/wishlists', async (req, res) => {
 
 async function addToWishlist(newData) {
   try {
-    const wishlistItems = await Wishlist.find();
-
-    const existingItem = wishlistItems.find(
-      (wish) => wish.product.toString() === newData.product.toString()
-    );
+    const existingItem = await Wishlist.findOne({ product: newData.product });
     console.log(existingItem);
 
     if (!existingItem) {
@@ -557,27 +553,6 @@ app.post('/api/wishlists', async (req, res) => {
     res.status(500).json({ error: 'Failed to add an item to wishlist' });
   }
 });
-
-// async function addToWishlist(item) {
-//   try {
-//     const newItem = new Wishlist(item);
-//     const saveItem = await newItem.save();
-//     return saveItem;
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
-
-// app.post('/api/wishlists', async (req, res) => {
-//   try {
-//     const savedItem = await addToWishlist(req.body);
-//     if (savedItem) {
-//       res.status(201).json(savedItem);
-//     }
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to add an item to wishlist' });
-//   }
-// });
 
 async function removeFromWishlist(wishlistId) {
   try {
@@ -625,9 +600,15 @@ app.get('/api/carts', async (req, res) => {
 
 async function addToCart(newData) {
   try {
-    const cartItems = new Cart(newData);
-    const saveCart = await cartItems.save();
-    return saveCart;
+    const existingItem = await Cart.findOne({ product: newData.product });
+    console.log(existingItem);
+
+    if (existingItem) {
+      return;
+    } else {
+      const item = new Cart(newData);
+      return await item.save();
+    }
   } catch (error) {
     console.log(error);
   }
@@ -637,7 +618,16 @@ app.post('/api/carts', async (req, res) => {
   try {
     const savedItem = await addToCart(req.body);
     console.log(savedItem);
-    res.status(201).json(savedItem);
+    if (savedItem) {
+      res.status(201).json({
+        message: 'Item added to cart successfully',
+        cart: savedItem,
+      });
+    } else {
+      res.json({
+        message: 'Item is already present in the cart',
+      });
+    }
   } catch (error) {
     res.status(500).json({ error: 'Failed to add an item to cart' });
   }
@@ -665,5 +655,35 @@ app.delete('/api/carts/:cartId', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to remove an item from cart' });
+  }
+});
+
+async function moveFromCartToWishlist(newData, cartId) {
+  try {
+    const cartItem = await Cart.findByIdAndDelete(cartId);
+    console.log(cartItem);
+    const item = new Wishlist(newData);
+    console.log(item);
+    await item.save();
+    return cartItem;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.post('/api/carts/:cartId', async (req, res) => {
+  try {
+    const itemToMove = await moveFromCartToWishlist(
+      req.body,
+      req.params.cartId
+    );
+    if (itemToMove) {
+      res.status(201).json({
+        message: 'Item moved from cart to wishlist successfully',
+        item: itemToMove,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to move an item from cart' });
   }
 });
