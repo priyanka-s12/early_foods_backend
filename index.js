@@ -659,14 +659,14 @@ app.delete('/api/carts/:cartId', async (req, res) => {
 });
 
 //moving items
-async function moveFromWishlistToCart(newData, wishlistId) {
+async function moveFromWishlistToCart(newData) {
   try {
     const existingItem = await Cart.findOne({ product: newData.product });
     console.log(existingItem);
     if (existingItem) {
       return;
     } else {
-      const wishlistItem = await Wishlist.findByIdAndDelete(wishlistId);
+      const wishlistItem = await Wishlist.findByIdAndDelete(newData._id);
       console.log(wishlistItem);
       const item = new Cart(newData);
       console.log(item);
@@ -678,12 +678,9 @@ async function moveFromWishlistToCart(newData, wishlistId) {
   }
 }
 
-app.post('/api/wishlists/:wishlistId', async (req, res) => {
+app.post('/api/wishlists/move', async (req, res) => {
   try {
-    const itemToMove = await moveFromWishlistToCart(
-      req.body,
-      req.params.wishlistId
-    );
+    const itemToMove = await moveFromWishlistToCart(req.body);
     console.log(itemToMove);
     if (itemToMove) {
       res.status(201).json({
@@ -702,7 +699,7 @@ app.post('/api/wishlists/:wishlistId', async (req, res) => {
   }
 });
 
-async function moveFromCartToWishlist(newData, cartId) {
+async function moveFromCartToWishlist(newData) {
   try {
     const existingItem = await Wishlist.findOne({ product: newData.product });
     console.log(existingItem);
@@ -710,7 +707,7 @@ async function moveFromCartToWishlist(newData, cartId) {
     if (existingItem) {
       return;
     } else {
-      const cartItem = await Cart.findByIdAndDelete(cartId);
+      const cartItem = await Cart.findByIdAndDelete(newData._id);
       console.log(cartItem);
       const item = new Wishlist(newData);
       console.log(item);
@@ -722,12 +719,9 @@ async function moveFromCartToWishlist(newData, cartId) {
   }
 }
 
-app.post('/api/carts/:cartId', async (req, res) => {
+app.post('/api/carts/move', async (req, res) => {
   try {
-    const itemToMove = await moveFromCartToWishlist(
-      req.body,
-      req.params.cartId
-    );
+    const itemToMove = await moveFromCartToWishlist(req.body);
     console.log(itemToMove);
     if (itemToMove) {
       res.status(201).json({
