@@ -671,7 +671,8 @@ async function moveFromWishlistToCart(newData) {
       const item = new Cart(newData);
       console.log(item);
       await item.save();
-      return wishlistItem;
+      // return wishlistItem;
+      return item;
     }
   } catch (error) {
     console.log(error);
