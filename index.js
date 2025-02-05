@@ -504,41 +504,58 @@ app.put('/api/addresses/:addressId', async (req, res) => {
 });
 
 //wishlist
-async function getWishlist() {
+async function getWishlist(user) {
   try {
-    const wishlist = await Wishlist.find().populate('product');
-    return wishlist;
+    const wishlistItems = await Wishlist.findOne({ user }).populate(
+      'products.product'
+    );
+    // console.log(wishlistItems);
+    return wishlistItems;
   } catch (error) {
     console.log(error);
   }
 }
 
-app.get('/api/wishlists', async (req, res) => {
+app.get('/api/wishlists/:userId', async (req, res) => {
   try {
-    const wishlists = await getWishlist();
+    const wishlists = await getWishlist(req.params.userId);
     res.status(200).json(wishlists);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get wishlist items' });
   }
 });
 
-async function addToWishlist(newData) {
+async function addToWishlist(user, product) {
   try {
-    const existingItem = await Wishlist.findOne({ product: newData.product });
-    console.log(existingItem);
+    let wishlist = await Wishlist.findOne({ user });
+    // console.log(wishlist);
 
-    if (!existingItem) {
-      const item = new Wishlist(newData);
-      return await item.save();
+    if (wishlist) {
+      const itemIndex = wishlist.products.findIndex((item) => {
+        return item.product.toString() === product.product;
+      });
+
+      // console.log(itemIndex);
+
+      if (itemIndex === -1) {
+        wishlist.products.push(product);
+      } else {
+        return;
+      }
+      return await wishlist.save();
+    } else {
+      wishlist = new Wishlist({ user, products: [product] });
+      return await wishlist.save();
     }
   } catch (error) {
     console.log(error);
   }
 }
 
-app.post('/api/wishlists', async (req, res) => {
+app.post('/api/wishlists/:userId', async (req, res) => {
   try {
-    const savedItem = await addToWishlist(req.body);
+    const savedItem = await addToWishlist(req.params.userId, req.body);
+    // console.log(savedItem);
     if (savedItem) {
       res.status(201).json({
         message: 'Item added to wishlist successfully',
@@ -554,87 +571,44 @@ app.post('/api/wishlists', async (req, res) => {
   }
 });
 
-async function removeFromWishlist(wishlistId) {
+async function removeFromWishlist(user, product) {
   try {
-    const item = await Wishlist.findByIdAndDelete(wishlistId);
-    return item;
+    const wishlist = await Wishlist.findOne({ user });
+    // console.log(user, product);
+
+    if (wishlist) {
+      const itemIndex = wishlist.products.findIndex((item) => {
+        return item.product.toString() === product.product;
+      });
+      // console.log(itemIndex);
+
+      if (itemIndex !== -1) {
+        wishlist.products.splice(itemIndex, 1);
+        return await wishlist.save();
+      } else {
+        return;
+      }
+    }
   } catch (error) {
     console.log(error);
   }
 }
 
-app.delete('/api/wishlists/:wishlistId', async (req, res) => {
+app.delete('/api/wishlists/:userId', async (req, res) => {
   try {
-    const deletedItem = await removeFromWishlist(req.params.wishlistId);
-    if (!deletedItem) {
-      res.status(404).json({ error: 'Item not found' });
+    const deletedItem = await removeFromWishlist(req.params.userId, req.body);
+    // console.log(deletedItem);
+    if (deletedItem) {
+      res.status(200).json({ message: 'Item deleted from wishlist' });
     } else {
-      res.status(200).json({
-        message: 'Item removed from wishlist successfully',
-        wishlist: deletedItem,
-      });
+      res.status(404).json({ error: 'Item not found.' });
     }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to remove an item from wishlist' });
+  } catch {
+    res.status(500).json({ error: 'Failed to delete product from wishlist' });
   }
 });
 
 //cart
-// async function getCartItems() {
-//   try {
-//     const cart = await Cart.find().populate('product');
-//     return cart;
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
-
-// app.get('/api/carts', async (req, res) => {
-//   try {
-//     const cart = await getCartItems();
-//     res.status(200).json(cart);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to get cart items' });
-//   }
-// });
-
-// async function addToCart(newData) {
-//   let { user, product, quantity } = newData;
-//   console.log(user, product);
-//   try {
-//     let existingItem = await Cart.findOne({ product });
-//     console.log(existingItem);
-
-//     if (existingItem) {
-//       return;
-//     } else {
-//       const item = new Cart(newData);
-//       return await item.save();
-//     }
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
-
-// app.post('/api/carts', async (req, res) => {
-//   try {
-//     const savedItem = await addToCart(req.body);
-//     console.log(savedItem);
-//     if (savedItem) {
-//       res.status(201).json({
-//         message: 'Item added to cart successfully',
-//         cart: savedItem,
-//       });
-//     } else {
-//       res.json({
-//         message: 'Item is already present in the cart',
-//       });
-//     }
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to add an item to cart' });
-//   }
-// });
-
 async function getCartItems(user) {
   try {
     const products = await Cart.findOne({ user }).populate('products.product');
@@ -665,7 +639,7 @@ async function addToCart(user, product) {
         // console.log(item.product.toString(), product.product);
         return item.product.toString() === product.product;
       });
-      console.log(itemIndex);
+      // console.log(itemIndex);
 
       if (itemIndex !== -1) {
         // console.log(cart.products[itemIndex].quantity);
@@ -702,13 +676,13 @@ app.post('/api/carts/:userId', async (req, res) => {
 async function removeFromCart(user, product) {
   try {
     const cart = await Cart.findOne({ user });
-    console.log(user, product);
+    // console.log(user, product);
 
     if (cart) {
       const itemIndex = cart.products.findIndex((item) => {
         return item.product.toString() === product.product;
       });
-      console.log(itemIndex);
+      // console.log(itemIndex);
 
       if (itemIndex !== -1) {
         cart.products.splice(itemIndex, 1);
@@ -739,13 +713,13 @@ app.delete('/api/carts/:userId', async (req, res) => {
 async function increaseQuantity(user, product) {
   try {
     const cart = await Cart.findOne({ user });
-    console.log(user, product);
+    // console.log(user, product);
 
     if (cart) {
       const itemIndex = cart.products.findIndex((item) => {
         return item.product.toString() === product.product;
       });
-      console.log(itemIndex);
+      // console.log(itemIndex);
 
       if (itemIndex !== -1) {
         cart.products[itemIndex].quantity =
@@ -786,16 +760,16 @@ async function decreaseQuantity(user, product) {
       const itemIndex = cart.products.findIndex((item) => {
         return item.product.toString() === product.product;
       });
-      console.log(itemIndex);
+      // console.log(itemIndex);
 
       if (itemIndex !== -1 && cart.products[itemIndex].quantity > 1) {
-        console.log(cart.products[itemIndex].quantity);
+        // console.log(cart.products[itemIndex].quantity);
         cart.products[itemIndex].quantity =
           cart.products[itemIndex].quantity - 1;
         return await cart.save();
       } else {
         cart.products.splice(itemIndex, 1);
-        console.log('Item removed');
+        await cart.save();
         return;
       }
     }
@@ -807,7 +781,7 @@ async function decreaseQuantity(user, product) {
 app.put('/api/carts/:userId/decrease', async (req, res) => {
   try {
     const item = await decreaseQuantity(req.params.userId, req.body);
-    console.log(item);
+    // console.log(item);
     if (item) {
       res
         .status(200)
@@ -817,5 +791,104 @@ app.put('/api/carts/:userId/decrease', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to decrease quantity' });
+  }
+});
+
+//move (cart -> wishlist)
+async function moveToWishlist(user, product) {
+  try {
+    const cart = await Cart.findOne({ user });
+
+    const itemIndex = cart.products.findIndex((item) => {
+      return item.product.toString() === product.product;
+    });
+    console.log(itemIndex);
+
+    if (itemIndex !== -1) {
+      cart.products.splice(itemIndex, 1);
+    }
+    await cart.save();
+
+    let wishlist = await Wishlist.findOne({ user });
+    console.log(wishlist);
+
+    if (wishlist) {
+      const existingItem = wishlist.products.find(
+        (item) => item.product.toString() === product.product
+      );
+      console.log(existingItem);
+
+      if (!existingItem) {
+        wishlist.products.push(product);
+      }
+    } else {
+      wishlist = new Wishlist({ user, products: [{ product }] });
+    }
+    return await wishlist.save();
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.put('/api/carts/:userId/move/wishlist', async (req, res) => {
+  try {
+    const item = await moveToWishlist(req.params.userId, req.body);
+    console.log(item);
+    if (item) {
+      res.status(200).json({ message: 'Item moved to wishlist successfully' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to move an item to wishlist' });
+  }
+});
+
+//move (wishlist -> cart)
+async function moveToCart(user, product) {
+  try {
+    const wishlist = await Wishlist.findOne({ user });
+
+    const itemIndex = wishlist.products.findIndex((item) => {
+      return item.product.toString() === product.product;
+    });
+    console.log(itemIndex);
+
+    if (itemIndex !== -1) {
+      wishlist.products.splice(itemIndex, 1);
+    }
+    await wishlist.save();
+
+    let cart = await Cart.findOne({ user });
+
+    if (cart) {
+      const existingItem = cart.products.find(
+        (item) => item.product.toString() === product.product
+      );
+      console.log(existingItem);
+
+      if (!existingItem) {
+        cart.products.push(product);
+      } else {
+        existingItem.quantity = existingItem.quantity + 1;
+      }
+    } else {
+      cart = new Cart({ user, products: [{ product }] });
+    }
+    return await cart.save();
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.put('/api/wishlists/:userId/move/cart', async (req, res) => {
+  try {
+    const item = await moveToCart(req.params.userId, req.body);
+    console.log(item);
+    if (item) {
+      res.status(200).json({ message: 'Item moved to cart successfully' });
+    } else {
+      res.status(404).json({ error: 'Item is already present in the cart' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to move an item to cart' });
   }
 });
