@@ -580,163 +580,242 @@ app.delete('/api/wishlists/:wishlistId', async (req, res) => {
 });
 
 //cart
-async function getCartItems() {
+// async function getCartItems() {
+//   try {
+//     const cart = await Cart.find().populate('product');
+//     return cart;
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
+
+// app.get('/api/carts', async (req, res) => {
+//   try {
+//     const cart = await getCartItems();
+//     res.status(200).json(cart);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to get cart items' });
+//   }
+// });
+
+// async function addToCart(newData) {
+//   let { user, product, quantity } = newData;
+//   console.log(user, product);
+//   try {
+//     let existingItem = await Cart.findOne({ product });
+//     console.log(existingItem);
+
+//     if (existingItem) {
+//       return;
+//     } else {
+//       const item = new Cart(newData);
+//       return await item.save();
+//     }
+//   } catch (error) {
+//     console.log(error);
+//   }
+// }
+
+// app.post('/api/carts', async (req, res) => {
+//   try {
+//     const savedItem = await addToCart(req.body);
+//     console.log(savedItem);
+//     if (savedItem) {
+//       res.status(201).json({
+//         message: 'Item added to cart successfully',
+//         cart: savedItem,
+//       });
+//     } else {
+//       res.json({
+//         message: 'Item is already present in the cart',
+//       });
+//     }
+//   } catch (error) {
+//     res.status(500).json({ error: 'Failed to add an item to cart' });
+//   }
+// });
+
+async function getCartItems(user) {
   try {
-    const cart = await Cart.find().populate('product');
-    return cart;
+    const products = await Cart.findOne({ user }).populate('products.product');
+    // console.log(products);
+    return products;
   } catch (error) {
     console.log(error);
   }
 }
 
-app.get('/api/carts', async (req, res) => {
-  try {
-    const cart = await getCartItems();
-    res.status(200).json(cart);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get cart items' });
+app.get('/api/carts/:userId', async (req, res) => {
+  {
+    try {
+      const getCart = await getCartItems(req.params.userId);
+      res.status(200).json(getCart);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get cart items' });
+    }
   }
 });
 
-async function addToCart(newData) {
+async function addToCart(user, product) {
   try {
-    const existingItem = await Cart.findOne({ product: newData.product });
-    console.log(existingItem);
+    let cart = await Cart.findOne({ user });
+    // console.log(user, product, cart);
+    if (cart) {
+      const itemIndex = cart.products.findIndex((item) => {
+        // console.log(item.product.toString(), product.product);
+        return item.product.toString() === product.product;
+      });
+      console.log(itemIndex);
 
-    if (existingItem) {
-      return;
+      if (itemIndex !== -1) {
+        // console.log(cart.products[itemIndex].quantity);
+        cart.products[itemIndex].quantity =
+          cart.products[itemIndex].quantity + 1;
+      } else {
+        cart.products.push(product);
+      }
     } else {
-      const item = new Cart(newData);
-      return await item.save();
+      cart = new Cart({ user, products: [{ product }] });
     }
+
+    const saveCart = await cart.save();
+    return saveCart;
   } catch (error) {
     console.log(error);
   }
 }
 
-app.post('/api/carts', async (req, res) => {
+app.post('/api/carts/:userId', async (req, res) => {
   try {
-    const savedItem = await addToCart(req.body);
-    console.log(savedItem);
-    if (savedItem) {
+    const cartItem = await addToCart(req.params.userId, req.body);
+    if (cartItem) {
       res.status(201).json({
         message: 'Item added to cart successfully',
-        cart: savedItem,
-      });
-    } else {
-      res.json({
-        message: 'Item is already present in the cart',
+        cart: cartItem,
       });
     }
   } catch (error) {
-    res.status(500).json({ error: 'Failed to add an item to cart' });
+    res.status(500).json({ error: 'Failed to add product to cart' });
   }
 });
 
-async function removeFromCart(cartId) {
+async function removeFromCart(user, product) {
   try {
-    const item = await Cart.findByIdAndDelete(cartId);
-    return item;
-  } catch (error) {
-    console.log(error);
-  }
-}
+    const cart = await Cart.findOne({ user });
+    console.log(user, product);
 
-app.delete('/api/carts/:cartId', async (req, res) => {
-  try {
-    const deletedItem = await removeFromCart(req.params.cartId);
-    if (!deletedItem) {
-      res.status(404).json({ error: 'Item not found' });
-    } else {
-      res.status(200).json({
-        message: 'Item removed from cart successfully',
-        cart: deletedItem,
+    if (cart) {
+      const itemIndex = cart.products.findIndex((item) => {
+        return item.product.toString() === product.product;
       });
-    }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to remove an item from cart' });
-  }
-});
+      console.log(itemIndex);
 
-//moving items
-async function moveFromWishlistToCart(newData) {
-  try {
-    const existingItem = await Cart.findOne({ product: newData.product });
-    console.log(existingItem);
-    if (existingItem) {
-      return;
-    } else {
-      const wishlistItem = await Wishlist.findByIdAndDelete(newData._id);
-      console.log(wishlistItem);
-      const item = new Cart(newData);
-      console.log(item);
-      await item.save();
-      // return wishlistItem;
-      return item;
+      if (itemIndex !== -1) {
+        cart.products.splice(itemIndex, 1);
+        return await cart.save();
+      } else {
+        return;
+      }
     }
   } catch (error) {
     console.log(error);
   }
 }
 
-app.post('/api/wishlists/move', async (req, res) => {
+app.delete('/api/carts/:userId', async (req, res) => {
   try {
-    const itemToMove = await moveFromWishlistToCart(req.body);
-    console.log(itemToMove);
-    if (itemToMove) {
-      res.status(201).json({
-        message: 'Item moved from wishlist to cart successfully',
-        wishlist: itemToMove,
-      });
+    const deletedItem = await removeFromCart(req.params.userId, req.body);
+    // console.log(deletedItem);
+    if (deletedItem) {
+      res.status(200).json({ message: 'Item deleted from cart' });
     } else {
-      res.json({
-        message: 'Item is already present in the cart',
-      });
+      res.status(404).json({ error: 'Item not found.' });
     }
-  } catch (error) {
-    res
-      .status(500)
-      .json({ error: 'Failed to move an item from wishlist to cart' });
+  } catch {
+    res.status(500).json({ error: 'Failed to delete product from cart' });
   }
 });
 
-async function moveFromCartToWishlist(newData) {
+async function increaseQuantity(user, product) {
   try {
-    const existingItem = await Wishlist.findOne({ product: newData.product });
-    console.log(existingItem);
+    const cart = await Cart.findOne({ user });
+    console.log(user, product);
 
-    if (existingItem) {
-      return;
+    if (cart) {
+      const itemIndex = cart.products.findIndex((item) => {
+        return item.product.toString() === product.product;
+      });
+      console.log(itemIndex);
+
+      if (itemIndex !== -1) {
+        cart.products[itemIndex].quantity =
+          cart.products[itemIndex].quantity + 1;
+      } else {
+        return;
+      }
+    }
+    const saveCart = await cart.save();
+    return saveCart;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.put('/api/carts/:userId/increase', async (req, res) => {
+  try {
+    const item = await increaseQuantity(req.params.userId, req.body);
+    // console.log(item);
+    if (item) {
+      res
+        .status(200)
+        .json({ message: 'Increased the quantity of item in the cart' });
     } else {
-      const cartItem = await Cart.findByIdAndDelete(newData._id);
-      console.log(cartItem);
-      const item = new Wishlist(newData);
-      console.log(item);
-      await item.save();
-      return cartItem;
+      res.status(404).json({ error: 'Item not found.' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to increase quantity' });
+  }
+});
+
+async function decreaseQuantity(user, product) {
+  try {
+    const cart = await Cart.findOne({ user });
+    // console.log(user, product);
+
+    if (cart) {
+      const itemIndex = cart.products.findIndex((item) => {
+        return item.product.toString() === product.product;
+      });
+      console.log(itemIndex);
+
+      if (itemIndex !== -1 && cart.products[itemIndex].quantity > 1) {
+        console.log(cart.products[itemIndex].quantity);
+        cart.products[itemIndex].quantity =
+          cart.products[itemIndex].quantity - 1;
+        return await cart.save();
+      } else {
+        cart.products.splice(itemIndex, 1);
+        console.log('Item removed');
+        return;
+      }
     }
   } catch (error) {
     console.log(error);
   }
 }
 
-app.post('/api/carts/move', async (req, res) => {
+app.put('/api/carts/:userId/decrease', async (req, res) => {
   try {
-    const itemToMove = await moveFromCartToWishlist(req.body);
-    console.log(itemToMove);
-    if (itemToMove) {
-      res.status(201).json({
-        message: 'Item moved from cart to wishlist successfully',
-        cart: itemToMove,
-      });
+    const item = await decreaseQuantity(req.params.userId, req.body);
+    console.log(item);
+    if (item) {
+      res
+        .status(200)
+        .json({ message: 'Decreased the quantity of item in the cart' });
     } else {
-      res.json({
-        message: 'Item is already present in the wishlist',
-      });
+      res.status(404).json({ error: 'Item removed from the cart.' });
     }
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: 'Failed to move an item from cart to wishlist' });
+    res.status(500).json({ error: 'Failed to decrease quantity' });
   }
 });
