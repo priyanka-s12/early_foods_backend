@@ -529,21 +529,22 @@ async function addToWishlist(user, product) {
   try {
     let wishlist = await Wishlist.findOne({ user });
     // console.log(wishlist);
-
     if (wishlist) {
       const itemIndex = wishlist.products.findIndex((item) => {
         return item.product.toString() === product.product;
       });
 
       // console.log(itemIndex);
-
       if (itemIndex === -1) {
         wishlist.products.push(product);
+        await wishlist.save();
+        return wishlist;
       }
-      return await wishlist.save();
+      return;
     } else {
       wishlist = new Wishlist({ user, products: [product] });
-      return await wishlist.save();
+      const savedItem = await wishlist.save();
+      return savedItem;
     }
   } catch (error) {
     console.log(error);
@@ -572,13 +573,11 @@ app.post('/api/wishlists/:userId', async (req, res) => {
 async function removeFromWishlist(user, product) {
   try {
     const wishlist = await Wishlist.findOne({ user });
-    // console.log(user, product);
 
     if (wishlist) {
       const itemIndex = wishlist.products.findIndex((item) => {
         return item.product.toString() === product.product;
       });
-      // console.log(itemIndex);
 
       if (itemIndex !== -1) {
         wishlist.products.splice(itemIndex, 1);
