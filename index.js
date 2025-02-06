@@ -539,8 +539,6 @@ async function addToWishlist(user, product) {
 
       if (itemIndex === -1) {
         wishlist.products.push(product);
-      } else {
-        return;
       }
       return await wishlist.save();
     } else {
