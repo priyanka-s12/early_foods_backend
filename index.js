@@ -526,21 +526,24 @@ app.get('/api/wishlists/:userId', async (req, res) => {
 });
 
 async function addToWishlist(user, product) {
+  // console.log(user, product);
   try {
     let wishlist = await Wishlist.findOne({ user });
     // console.log(wishlist);
     if (wishlist) {
-      const itemIndex = wishlist.products.findIndex((item) => {
+      const existingItem = wishlist.products.some((item) => {
+        // console.log(typeof item.product.toString(), typeof product.product);
         return item.product.toString() === product.product;
       });
 
-      // console.log(itemIndex);
-      if (itemIndex === -1) {
+      console.log(existingItem);
+
+      if (existingItem) {
+        return;
+      } else {
         wishlist.products.push(product);
-        await wishlist.save();
-        return wishlist;
+        return await wishlist.save();
       }
-      return;
     } else {
       wishlist = new Wishlist({ user, products: [product] });
       const savedItem = await wishlist.save();
@@ -554,7 +557,7 @@ async function addToWishlist(user, product) {
 app.post('/api/wishlists/:userId', async (req, res) => {
   try {
     const savedItem = await addToWishlist(req.params.userId, req.body);
-    // console.log(savedItem);
+    console.log(savedItem);
     if (savedItem) {
       res.status(201).json({
         message: 'Item added to wishlist successfully',
