@@ -504,60 +504,45 @@ app.put('/api/addresses/:addressId', async (req, res) => {
 });
 
 //wishlist
-async function getWishlist(user) {
+async function getWishlist() {
   try {
-    const wishlistItems = await Wishlist.findOne({ user }).populate(
-      'products.product'
-    );
-    // console.log(wishlistItems);
-    return wishlistItems;
+    const wishlist = await Wishlist.find().populate('product');
+    return wishlist;
   } catch (error) {
     console.log(error);
   }
 }
-
-app.get('/api/wishlists/:userId', async (req, res) => {
+app.get('/api/wishlists', async (req, res) => {
   try {
-    const wishlists = await getWishlist(req.params.userId);
+    const wishlists = await getWishlist();
     res.status(200).json(wishlists);
   } catch (error) {
     res.status(500).json({ error: 'Failed to get wishlist items' });
   }
 });
 
-async function addToWishlist(user, product) {
-  // console.log(user, product);
+async function addToWishlist(newData) {
   try {
-    let wishlist = await Wishlist.findOne({ user });
-    // console.log(wishlist);
-    if (wishlist) {
-      const existingItem = wishlist.products.some((item) => {
-        // console.log(typeof item.product.toString(), typeof product.product);
-        return item.product.toString() === product.product;
-      });
+    const wishlistItems = await Wishlist.find();
+    // const existingItem = wishlistItems.find(
+    //   (wish) => wish.product.toString() === newData.product.toString()
+    // );
 
-      console.log(existingItem);
+    const existingItem = await Wishlist.findOne({ product: newData.product });
+    console.log(existingItem);
 
-      if (existingItem) {
-        return;
-      } else {
-        wishlist.products.push(product);
-        return await wishlist.save();
-      }
-    } else {
-      wishlist = new Wishlist({ user, products: [product] });
-      const savedItem = await wishlist.save();
-      return savedItem;
+    if (!existingItem) {
+      const item = new Wishlist(newData);
+      return await item.save();
     }
   } catch (error) {
     console.log(error);
   }
 }
 
-app.post('/api/wishlists/:userId', async (req, res) => {
+app.post('/api/wishlists', async (req, res) => {
   try {
-    const savedItem = await addToWishlist(req.params.userId, req.body);
-    console.log(savedItem);
+    const savedItem = await addToWishlist(req.body);
     if (savedItem) {
       res.status(201).json({
         message: 'Item added to wishlist successfully',
@@ -573,38 +558,27 @@ app.post('/api/wishlists/:userId', async (req, res) => {
   }
 });
 
-async function removeFromWishlist(user, product) {
+async function removeFromWishlist(wishlistId) {
   try {
-    const wishlist = await Wishlist.findOne({ user });
-
-    if (wishlist) {
-      const itemIndex = wishlist.products.findIndex((item) => {
-        return item.product.toString() === product.product;
-      });
-
-      if (itemIndex !== -1) {
-        wishlist.products.splice(itemIndex, 1);
-        return await wishlist.save();
-      } else {
-        return;
-      }
-    }
+    const item = await Wishlist.findByIdAndDelete(wishlistId);
+    return item;
   } catch (error) {
     console.log(error);
   }
 }
-
-app.delete('/api/wishlists/:userId', async (req, res) => {
+app.delete('/api/wishlists/:wishlistId', async (req, res) => {
   try {
-    const deletedItem = await removeFromWishlist(req.params.userId, req.body);
-    // console.log(deletedItem);
-    if (deletedItem) {
-      res.status(200).json({ message: 'Item deleted from wishlist' });
+    const deletedItem = await removeFromWishlist(req.params.wishlistId);
+    if (!deletedItem) {
+      res.status(404).json({ error: 'Item not found' });
     } else {
-      res.status(404).json({ error: 'Item not found.' });
+      res.status(200).json({
+        message: 'Item removed from wishlist successfully',
+        wishlist: deletedItem,
+      });
     }
-  } catch {
-    res.status(500).json({ error: 'Failed to delete product from wishlist' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove an item from wishlist' });
   }
 });
 
