@@ -232,7 +232,6 @@ app.get('/api/products/search/:title', async (req, res) => {
     if (products.length === 0) {
       res.status(404).json({
         error: `No ${req.params.title} product found`,
-        product: products,
       });
     } else {
       res.status(200).json(products);
