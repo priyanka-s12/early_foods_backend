@@ -230,7 +230,10 @@ app.get('/api/products/search/:title', async (req, res) => {
     const products = await searchProductByTitle(req.params.title);
 
     if (products.length === 0) {
-      res.status(404).json({ error: `No ${req.params.title} product found` });
+      res.status(404).json({
+        error: `No ${req.params.title} product found`,
+        product: products,
+      });
     } else {
       res.status(200).json(products);
     }
@@ -334,58 +337,6 @@ app.get('/api/users/:userId', async (req, res) => {
     res.status(500).json({ error: 'Failed to get an user' });
   }
 });
-
-// async function deleteUser(userId) {
-//   try {
-//     const user = await User.findByIdAndDelete(userId);
-//     return user;
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
-
-// app.delete('/api/users/:userId', async (req, res) => {
-//   try {
-//     const deletedUser = await deleteUser(req.params.userId);
-//     if (!deletedUser) {
-//       res.status(404).json({ error: 'User not found' });
-//     } else {
-//       res.status(200).json({
-//         message: 'user deleted successfully',
-//         user: deletedUser,
-//       });
-//     }
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to delete an user' });
-//   }
-// });
-
-// async function updateUser(userId, dataToUpdate) {
-//   try {
-//     const updatedUser = await User.findByIdAndUpdate(userId, dataToUpdate, {
-//       new: true,
-//     });
-//     return updatedUser;
-//   } catch (error) {
-//     console.log(error);
-//   }
-// }
-
-// app.put('/api/users/:userId', async (req, res) => {
-//   try {
-//     const updatedUser = await updateUser(req.params.userId, req.body);
-//     if (updatedUser) {
-//       res.status(200).json({
-//         message: 'User updated successfully',
-//         user: updatedUser,
-//       });
-//     } else {
-//       res.status(404).json({ error: 'Could not update user details' });
-//     }
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to update user' });
-//   }
-// });
 
 //address
 async function addAddress(newAddress) {
