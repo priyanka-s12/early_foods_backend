@@ -619,9 +619,10 @@ app.put('/api/carts/increase', async (req, res) => {
   try {
     const item = await increaseQuantity(req.body);
     if (item) {
-      res
-        .status(200)
-        .json({ message: 'Increased the quantity of item in the cart' });
+      res.status(200).json({
+        message: 'Increased the quantity of item in the cart',
+        product: item,
+      });
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to increase quantity of an item' });
@@ -647,9 +648,10 @@ app.put('/api/carts/decrease', async (req, res) => {
   try {
     const item = await decreaseQuantity(req.body);
     if (item) {
-      res
-        .status(200)
-        .json({ message: 'Decreased the quantity of item in the cart' });
+      res.status(200).json({
+        message: 'Decreased the quantity of item in the cart',
+        product: item,
+      });
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to decrease quantity of an item' });
