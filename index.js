@@ -686,9 +686,10 @@ app.put('/api/carts/move', async (req, res) => {
   try {
     const item = await moveFromWishlistToCart(req.body);
     if (item) {
-      res
-        .status(200)
-        .json({ message: 'Item moved from wishlist to cart successfully.' });
+      res.status(200).json({
+        message: 'Item moved from wishlist to cart successfully.',
+        product: item,
+      });
     }
   } catch (error) {
     console.log(error);
@@ -713,11 +714,10 @@ app.put('/api/wishlists/move', async (req, res) => {
   try {
     const item = await moveFromCartToWishlist(req.body);
     if (item) {
-      res
-        .status(200)
-        .json({ message: 'Item moved from cart to wishlist successfully.' });
-    } else {
-      res.status(404).json({ message: 'Item added to wishlist successfully' });
+      res.status(200).json({
+        message: 'Item moved from cart to wishlist successfully.',
+        product: item,
+      });
     }
   } catch (error) {
     console.log(error);
