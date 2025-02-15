@@ -656,11 +656,6 @@ app.put('/api/carts/decrease', async (req, res) => {
         message: 'Decreased the quantity of item in the cart',
         product: item,
       });
-    } else {
-      res.status(404).json({
-        message: 'Item is removed from the cart',
-        product: item,
-      });
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to decrease quantity of an item' });
