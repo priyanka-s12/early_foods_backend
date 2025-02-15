@@ -600,10 +600,10 @@ app.delete('/api/carts/:cartId', async (req, res) => {
   }
 });
 
-async function increaseQuantity(product) {
-  console.log(product);
+async function increaseQuantity(cartId) {
+  console.log(cartId);
   try {
-    const existingItem = await Cart.findOne({ product: product.product });
+    const existingItem = await Cart.findOne({ _id: cartId });
     console.log(existingItem);
 
     if (existingItem) {
@@ -629,13 +629,16 @@ app.put('/api/carts/increase', async (req, res) => {
   }
 });
 
-async function decreaseQuantity(product) {
-  console.log(product);
+async function decreaseQuantity(cartId) {
+  console.log(cartId);
   try {
-    const existingItem = await Cart.findOne({ product: product.product });
+    const existingItem = await Cart.findOne({ _id: cartId });
     console.log(existingItem);
 
-    if (existingItem) {
+    if (existingItem.quantity === 1) {
+      const item = await Cart.findByIdAndDelete(cartId);
+      return item;
+    } else {
       existingItem.quantity = existingItem.quantity - 1;
       return await existingItem.save();
     }
@@ -647,9 +650,15 @@ async function decreaseQuantity(product) {
 app.put('/api/carts/decrease', async (req, res) => {
   try {
     const item = await decreaseQuantity(req.body);
+    console.log('Item: ', item);
     if (item) {
       res.status(200).json({
         message: 'Decreased the quantity of item in the cart',
+        product: item,
+      });
+    } else {
+      res.status(404).json({
+        message: 'Item is removed from the cart',
         product: item,
       });
     }
