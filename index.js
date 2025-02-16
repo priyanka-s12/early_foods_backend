@@ -731,7 +731,7 @@ app.put('/api/wishlists/move', async (req, res) => {
         product: item,
       });
     } else {
-      res.status(404).json({
+      res.json({
         message: 'Item is already present in the wishlist.',
         product: item,
       });
