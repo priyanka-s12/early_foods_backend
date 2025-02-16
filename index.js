@@ -667,7 +667,7 @@ async function moveFromWishlistToCart(newData) {
   console.log(newData);
   try {
     const existingItem = await Cart.findOne({
-      product: newData.product,
+      _id: newData._id,
     });
     console.log(existingItem);
 
@@ -704,11 +704,18 @@ app.put('/api/carts/move', async (req, res) => {
 async function moveFromCartToWishlist(newData) {
   console.log(newData);
   try {
+    const existingItem = await Wishlist.findOne({
+      _id: newData._id,
+    });
+    console.log(existingItem);
+
     const cart = await Cart.findByIdAndDelete(newData._id);
     console.log(cart);
 
-    const item = new Wishlist(newData);
-    return await item.save();
+    if (!existingItem) {
+      const item = new Wishlist(newData);
+      return await item.save();
+    }
   } catch (error) {
     console.log(error);
   }
@@ -717,9 +724,15 @@ async function moveFromCartToWishlist(newData) {
 app.put('/api/wishlists/move', async (req, res) => {
   try {
     const item = await moveFromCartToWishlist(req.body);
+    console.log(item);
     if (item) {
       res.status(200).json({
         message: 'Item moved from cart to wishlist successfully.',
+        product: item,
+      });
+    } else {
+      res.status(200).json({
+        message: 'Item is already present in the wishlist.',
         product: item,
       });
     }
