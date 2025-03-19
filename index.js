@@ -9,6 +9,7 @@ const Address = require('./models/address.model');
 const User = require('./models/user.model');
 const Wishlist = require('./models/wishlist.model');
 const Cart = require('./models/cart.model');
+const Order = require('./models/order.model');
 
 const app = express();
 
@@ -373,7 +374,7 @@ app.get('/api/addresses', async (req, res) => {
     if (allAddresses.length > 0) {
       res.json(allAddresses);
     } else {
-      res.json(404).json({ error: 'No addresses found' });
+      res.status(404).json({ error: 'No addresses found' });
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to get all addresses.' });
@@ -738,5 +739,50 @@ app.put('/api/wishlists/move', async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+  }
+});
+
+//order
+async function createOrder(newOrder) {
+  try {
+    const order = new Order(newOrder);
+    const saveOrder = await order.save();
+    return saveOrder;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+app.post('/api/orders', async (req, res) => {
+  try {
+    const savedOrder = await createOrder(req.body);
+    res
+      .status(201)
+      .json({ message: 'Order added successfully', order: savedOrder });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to place an order' });
+  }
+});
+
+async function readAllOrders() {
+  try {
+    const allOrders = await Order.find()
+      .populate('cartItem')
+      .populate('shippingAddress');
+    return allOrders;
+  } catch (error) {
+    console.log(error);
+  }
+}
+app.get('/api/orders', async (req, res) => {
+  try {
+    const allOrders = await readAllOrders();
+    if (allOrders.length > 0) {
+      res.json(allOrders);
+    } else {
+      res.status(404).json({ message: 'No order found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get all orders.' });
   }
 });
