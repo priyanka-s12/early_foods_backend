@@ -767,7 +767,13 @@ app.post('/api/orders', async (req, res) => {
 async function readAllOrders() {
   try {
     const allOrders = await Order.find()
-      .populate('cartItem')
+      .populate({
+        path: 'cartItem',
+        populate: {
+          path: 'product',
+          model: 'Product', //need to explicitely specify the model name to use for populating
+        },
+      })
       .populate('shippingAddress');
     return allOrders;
   } catch (error) {
