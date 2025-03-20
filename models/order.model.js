@@ -8,7 +8,6 @@ const orderSchema = new mongoose.Schema(
       default: Date.now,
     },
     shippingAddress: { type: mongoose.Schema.Types.ObjectId, ref: 'Address' },
-    paymentStatus: String,
   },
   { timestamps: true }
 );
