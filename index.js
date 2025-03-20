@@ -781,11 +781,7 @@ async function readAllOrders() {
 app.get('/api/orders', async (req, res) => {
   try {
     const allOrders = await readAllOrders();
-    if (allOrders.length > 0) {
-      res.json(allOrders);
-    } else {
-      res.status(404).json({ message: 'No order found' });
-    }
+    res.status(200).json({ allOrders });
   } catch (error) {
     res.status(500).json({ error: 'Failed to get all orders.' });
   }
